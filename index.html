@@ -43,6 +43,7 @@
     display: grid;
     grid-template-columns: 400px 1fr;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
 
@@ -429,6 +430,7 @@
     display: flex;
     justify-content: center;
     min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - 64px);
   }
 
   .hoja {
@@ -602,6 +604,8 @@
     min-height: 30px;
   }
 
+  .txt-del { display: none; }
+
   .col-desc { width: 44%; }
   .col-cant { width: 10%; }
   .col-precio { width: 16%; }
@@ -737,6 +741,7 @@
     max-width: 700px;
     width: 100%;
     max-height: 85vh;
+    max-height: 85dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -876,7 +881,7 @@
   /* ============ IMPRESIÓN ============ */
   @media print {
     body { background: white; overflow: visible; }
-    .panel, .acciones, .modal { display: none !important; }
+    .panel, .acciones, .modal, .tabs-movil { display: none !important; }
     .app { display: block; height: auto; overflow: visible; }
     .preview-area { background: white; overflow: visible; }
     .hoja-wrapper { padding: 0; min-height: auto; display: block; }
@@ -886,21 +891,169 @@
       min-height: auto;
       padding: 12mm;
       border-radius: 0;
+      zoom: 1 !important;
     }
     .firmas { margin-top: 35px; }
   }
 
   /* ============ RESPONSIVE ============ */
-  @media (max-width: 1100px) {
-    .app { grid-template-columns: 1fr; }
-    .panel { max-height: none; }
-    .hoja { width: 100%; }
+  /* Se usa "screen and" para que nada de esto aplique al imprimir. */
+  .tabs-movil { display: none; }
+
+  /* ----hasta 1100px: layout apilado y scroll normal (móvil + tablet) ---- */
+  @media screen and (max-width: 1100px) {
+    :root { --alto-tabs: 62px; }
+
+    body { overflow: auto; }
+    html, body { height: auto; }
+
+    .tabs-movil {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 8px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .tab-btn {
+      height: 46px;
+      padding: 0 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .tab-btn.activa {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .app {
+      display: block;
+      height: auto;
+      overflow: visible;
+    }
+    .app.ver-panel .preview-area { display: none; }
+    .app.ver-preview .panel { display: none; }
+
+    .panel {
+      border-right: none;
+      overflow: visible;
+      overflow-y: visible;
+    }
+    .preview-area { overflow: visible; }
+
+    /* La barra de acciones queda debajo de las pestañas al hacer scroll */
+    .acciones { top: var(--alto-tabs); }
+
+    .hoja-wrapper {
+      padding: 20px;
+      min-height: 0;
+      overflow: auto;
+      display: block;
+    }
+    /* En tablet la hoja A4 entra entera: se centra sin deformarla */
+    .hoja { margin: 0 auto; }
+  }
+
+  /* ----hasta 900px: además, formato compacto y táctil ---- */
+  @media screen and (max-width: 900px) {
+    /* Targets táctiles + evitar zoom automático de Android en los inputs */
+    .campo input,
+    .campo select,
+    .campo textarea {
+      padding: 12px;
+      font-size: 16px;
+    }
+    .seccion-header { padding: 16px 18px; min-height: 52px; }
+    .seccion-cuerpo { padding: 4px 18px 20px; }
+    .fila-2 { grid-template-columns: 1fr; }
+    .btn { padding: 12px 16px; font-size: .85rem; min-height: 44px; }
+    .quick-actions button { padding: 11px 10px; min-height: 44px; }
+    .modal { padding: 12px; }
+    .modal-head, .modal-body { padding-left: 16px; padding-right: 16px; }
+
+    /* Barra de acciones: grid de 2 columnas, siempre accesible */
+    .acciones {
+      padding: 10px 12px;
+      gap: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .acciones .espaciador { display: none; }
+    .acciones .btn { width: 100%; justify-content: center; }
+
+    /* La hoja conserva EXACTAMENTE el diseño A4: solo se escala en pantalla.
+       zoom (no transform) para que el texto siga nítido y el contenedor
+       mida el tamaño real de la hoja. */
+    .hoja-wrapper {
+      padding: 12px;
+      overflow: auto;
+      display: block;
+      -webkit-overflow-scrolling: touch;
+    }
+    .app .hoja {
+      zoom: var(--escala-hoja, 1);
+      box-shadow: 0 2px 12px rgba(0,0,0,.10);
+      margin: 0 auto;
+    }
+    /* El PDF nunca debe salir escalado */
+    .hoja-fuera { zoom: 1 !important; }
+
+    /* Controles de zoom */
+    .zoom-ctl {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 0 2px;
+    }
+    .zoom-ctl[hidden] { display: none; }
+    .zoom-ctl .btn-zoom {
+      padding: 0 12px;
+      min-height: 38px;
+      min-width: 44px;
+      font-size: .9rem;
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      justify-content: center;
+    }
+    .zoom-label {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 46px;
+      text-align: center;
+    }
+  }
+
+  @media screen and (max-width: 340px) {
+    .acciones { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<div class="app">
+<!-- PESTAÑAS MÓVIL -->
+<nav class="tabs-movil">
+  <button type="button" class="tab-btn activa" data-panel="panel">📝 Datos</button>
+  <button type="button" class="tab-btn" data-panel="preview">👁 Vista previa</button>
+</nav>
+
+<div class="app ver-panel">
 
   <!-- ==================== PANEL LATERAL ==================== -->
   <aside class="panel">
@@ -1205,6 +1358,12 @@
 
     <!-- ACCIONES -->
     <div class="acciones">
+      <div class="zoom-ctl" id="zoomCtl" hidden>
+        <button type="button" class="btn btn-zoom" onclick="cambiarZoom(-0.1)" aria-label="Alejar">−</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button type="button" class="btn btn-zoom" onclick="cambiarZoom(0.1)" aria-label="Acercar">+</button>
+        <button type="button" class="btn btn-zoom" onclick="ajustarHoja()">⬇ Ajustar</button>
+      </div>
       <button class="btn btn-add" onclick="agregarItem()">+ Agregar ítem</button>
       <button class="btn btn-success" onclick="guardarPresupuesto()">💾 Guardar</button>
       <span class="espaciador"></span>
@@ -1467,14 +1626,14 @@ function agregarItem(desc='', cant=1, precio=0) {
     .replace(/>/g, '&gt;');
 
   tr.innerHTML = `
-    <td class="col-desc">
+    <td class="col-desc" data-label="Descripción">
       <textarea class="inp-desc" rows="1"
                 oninput="autoAlto(this); calcular();">${descEscapado}</textarea>
     </td>
-    <td class="col-cant"><input class="inp-cant" type="number" value="${cant}" min="0" step="0.01" oninput="calcular()"></td>
-    <td class="col-precio"><input class="inp-precio" type="number" value="${precio}" min="0" step="0.01" oninput="calcular()"></td>
-    <td class="col-sub subtotal">0.00</td>
-    <td class="col-accion"><button class="btn btn-del" onclick="this.closest('tr').remove();calcular()" style="background:#ef4444;color:white;padding:4px 8px;font-size:.7rem;border:none;border-radius:4px;cursor:pointer">✕</button></td>
+    <td class="col-cant" data-label="Cantidad"><input class="inp-cant" type="number" value="${cant}" min="0" step="0.01" oninput="calcular()"></td>
+    <td class="col-precio" data-label="Precio unitario"><input class="inp-precio" type="number" value="${precio}" min="0" step="0.01" oninput="calcular()"></td>
+    <td class="col-sub subtotal" data-label="Subtotal">0.00</td>
+    <td class="col-accion" data-label=""><button class="btn btn-del" onclick="this.closest('tr').remove();calcular()" style="background:#ef4444;color:white;padding:4px 8px;font-size:.7rem;border:none;border-radius:4px;cursor:pointer">✕<span class="txt-del"> Eliminar</span></button></td>
   `;
   tbody.appendChild(tr);
 
@@ -1859,7 +2018,9 @@ async function exportarPDF() {
     inp.parentNode.replaceChild(span, inp);
   });
 
+  clon.classList.add('hoja-fuera');
   clon.style.width = '210mm';
+  clon.style.zoom = '1';
   clon.style.minHeight = 'auto';
   clon.style.height = 'auto';
   clon.style.padding = '12mm';
@@ -1910,9 +2071,113 @@ async function exportarPDF() {
 }
 
 /* =========================================================
+   PESTAÑAS MÓVIL
+   ========================================================= */
+const ANCHO_MOVIL = 1100;
+let pestanaActual = 'panel';
+
+function esMovil() {
+  try {
+    return window.matchMedia('(max-width: ' + ANCHO_MOVIL + 'px)').matches;
+  } catch (e) {
+    return window.innerWidth <= ANCHO_MOVIL;
+  }
+}
+
+function verPanel(cual) {
+  const app = document.querySelector('.app');
+  pestanaActual = cual;
+  app.classList.toggle('ver-panel', cual === 'panel');
+  app.classList.toggle('ver-preview', cual !== 'panel');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('activa', b.dataset.panel === cual);
+  });
+  window.scrollTo(0, 0);
+}
+
+function initPestanasMovil() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => verPanel(btn.dataset.panel));
+  });
+
+  // En escritorio se muestran panel y vista previa a la vez: quitar las clases.
+  // Al volver a móvil hay que restaurar la pestaña activa.
+  window.addEventListener('resize', () => {
+    const app = document.querySelector('.app');
+    if (esMovil()) {
+      app.classList.add('ver-' + pestanaActual);
+    } else {
+      app.classList.remove('ver-panel', 'ver-preview');
+    }
+  });
+}
+
+/* =========================================================
+   ZOOM DE LA HOJA
+   La hoja siempre se mantiene en tamaño A4 real (210x297mm).
+   En pantallas chica se escala con `zoom` para que entre completa,
+   sin deformar el diseño ni romper el encabezado.
+   ========================================================= */
+let anchoHojaPx = 794;   // 210mm medido al cargar
+let escalaHoja = 1;
+let escalaForzada = false;
+
+function medirHoja() {
+  const hoja = document.getElementById('hoja');
+  const zoomPrevio = hoja.style.zoom;
+  hoja.style.zoom = '1';
+  const w = hoja.getBoundingClientRect().width;
+  hoja.style.zoom = zoomPrevio;
+  if (w > 0) anchoHojaPx = w;
+}
+
+function aplicarZoom() {
+  const hoja = document.getElementById('hoja');
+  const wrap = document.querySelector('.hoja-wrapper');
+  const ctl = document.getElementById('zoomCtl');
+  const label = document.getElementById('zoomLabel');
+
+  if (!esMovil()) {
+    hoja.style.zoom = '';
+    ctl.hidden = true;
+    escalaForzada = false;
+    escalaHoja = 1;
+    return;
+  }
+
+  ctl.hidden = false;
+
+  // Espacio real disponible (sin contar scrollbars)
+  const disp = wrap.getBoundingClientRect().width - 24;
+  const escalaAjuste = Math.min(1, disp / anchoHojaPx);
+
+  if (!escalaForzada) escalaHoja = escalaAjuste;
+  escalaHoja = Math.max(0.2, Math.min(2, escalaHoja));
+
+  hoja.style.zoom = escalaHoja;
+  label.textContent = Math.round(escalaHoja * 100) + '%';
+}
+
+function cambiarZoom(paso) {
+  escalaForzada = true;
+  escalaHoja = escalaHoja + paso;
+  aplicarZoom();
+}
+
+function ajustarHoja() {
+  escalaForzada = false;
+  aplicarZoom();
+}
+
+/* =========================================================
    INICIO
    ========================================================= */
 window.addEventListener('DOMContentLoaded', () => {
+  initPestanasMovil();
+  medirHoja();
+  aplicarZoom();
+  window.addEventListener('resize', aplicarZoom);
+  window.addEventListener('orientationchange', () => setTimeout(aplicarZoom, 250));
   vincularCampos();
   cargarConfig();
 
